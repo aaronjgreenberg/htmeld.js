@@ -10,7 +10,7 @@
 //
 // Showdown namespace
 //
-var Showdown = { extensions: {} };
+var Showdown = {};
 
 //
 // forEach
@@ -27,19 +27,12 @@ var forEach = Showdown.forEach = function(obj, callback) {
 };
 
 //
-// Standard extension naming
-//
-var stdExtName = function(s) {
-	return s.replace(/[_-]||\s/g, '').toLowerCase();
-};
-
-//
 // converter
 //
 // Wraps all "globals" so that the only thing
 // exposed is makeHtml().
 //
-Showdown.converter = function(converter_options) {
+Showdown.converter = function() {
 
 //
 // Globals:
@@ -58,27 +51,18 @@ var g_list_level = 0;
 var g_lang_extensions = [];
 var g_output_modifiers = [];
 
-
-//
-// Automatic Extension Loading (node only):
-//
-
-if (typeof module !== 'undefind' && typeof exports !== 'undefined' && typeof require !== 'undefind') {
-	var fs = require('fs');
-
-	if (fs) {
-		// Search extensions folder
-		var extensions = fs.readdirSync((__dirname || '.')+'/extensions').filter(function(file){
-			return ~file.indexOf('.js');
-		}).map(function(file){
-			return file.replace(/\.js$/, '');
-		});
-		// Load extensions into Showdown namespace
-		Showdown.forEach(extensions, function(ext){
-			var name = stdExtName(ext);
-			Showdown.extensions[name] = require('./extensions/' + ext);
-		});
+this.getElements = function() {
+	var classElements = new Array();
+	var els = document.getElementsByTagName('*');
+	var elsLen = els.length;
+	var pattern = new RegExp('(^|\\\\s)'+'markdown'+'(\\\\s|$)');
+	for (i = 0, j = 0; i < elsLen; i++) {
+		if ( pattern.test(els[i].className) ) {
+			classElements[j] = els[i];
+			j++;
+		}
 	}
+	return classElements;
 }
 
 this.makeHtml = function(text) {
@@ -124,11 +108,6 @@ this.makeHtml = function(text) {
 	// contorted like /[ \t]*\n+/ .
 	text = text.replace(/^[ \t]+$/mg,"");
 
-	// Run language extensions
-	Showdown.forEach(g_lang_extensions, function(x){
-		text = _ExecuteExtension(x, text);
-	});
-
 	// Handle github codeblocks prior to running HashHTML so that
 	// HTML contained within the codeblock gets escaped propertly
 	text = _DoGithubCodeBlocks(text);
@@ -149,59 +128,7 @@ this.makeHtml = function(text) {
 	// attacklab: Restore tildes
 	text = text.replace(/~T/g,"~");
 
-	// Run output modifiers
-	Showdown.forEach(g_output_modifiers, function(x){
-		text = _ExecuteExtension(x, text);
-	});
-
 	return text;
-};
-//
-// Options:
-//
-
-// Parse extensions options into separate arrays
-if (converter_options && converter_options.extensions) {
-
-  var self = this;
-
-	// Iterate over each plugin
-	Showdown.forEach(converter_options.extensions, function(plugin){
-
-		// Assume it's a bundled plugin if a string is given
-		if (typeof plugin === 'string') {
-			plugin = Showdown.extensions[stdExtName(plugin)];
-		}
-
-		if (typeof plugin === 'function') {
-			// Iterate over each extension within that plugin
-			Showdown.forEach(plugin(self), function(ext){
-				// Sort extensions by type
-				if (ext.type) {
-					if (ext.type === 'language' || ext.type === 'lang') {
-						g_lang_extensions.push(ext);
-					} else if (ext.type === 'output' || ext.type === 'html') {
-						g_output_modifiers.push(ext);
-					}
-				} else {
-					// Assume language extension
-					g_output_modifiers.push(ext);
-				}
-			});
-		} else {
-			throw "Extension '" + plugin + "' could not be loaded.  It was either not found or is not a valid extension.";
-		}
-	});
-}
-
-
-var _ExecuteExtension = function(ext, text) {
-	if (ext.regex) {
-		var re = new RegExp(ext.regex, 'g');
-		return text.replace(re, ext.replace);
-	} else if (ext.filter) {
-		return ext.filter(text);
-	}
 };
 
 var _StripLinkDefinitions = function(text) {
@@ -1386,15 +1313,8 @@ var escapeCharacters_callback = function(wholeMatch,m1) {
 
 } // end of Showdown.converter
 
-
-// export
-if (typeof module !== 'undefined') module.exports = Showdown;
-
-// stolen from AMD branch of underscore
-// AMD define happens at the end for compatibility with AMD loaders
-// that don't enforce next-turn semantics on modules.
-if (typeof define === 'function' && define.amd) {
-    define('showdown', function() {
-        return Showdown;
-    });
-}
+var Converter = new Showdown.converter();
+var toMarkUp = Converter.getElements();
+toMarkUp.forEach (function (element) {
+	element.innerHTML = Converter.makeHtml(element.innerHTML);
+});

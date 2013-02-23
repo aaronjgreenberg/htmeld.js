@@ -47,10 +47,6 @@ var g_html_blocks;
 // (see _ProcessListItems() for details):
 var g_list_level = 0;
 
-// Global extensions
-var g_lang_extensions = [];
-var g_output_modifiers = [];
-
 this.getElements = function() {
 	var classElements = new Array();
 	var els = document.getElementsByTagName('*');

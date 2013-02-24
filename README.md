@@ -10,7 +10,7 @@ It's very simple to use.  Just include the `htmeld.js` script in your HTML file:
 <script type="text/javascript" src="/path/to/htmeld.js"></script>
 ```
 
-Then, any HTML element with a Markdown class will have its contents converted into HTML in the browser.
+You should add that script at the end of your HTML so it doesn't run until all the elements are loaded.  Then, any HTML element with a Markdown class will have its contents converted into HTML in the browser.
 
 ```html
 <div class="markdown">
